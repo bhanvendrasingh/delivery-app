@@ -91,33 +91,33 @@ resource "aws_security_group" "ecs" {
   }
 }
 
-# # MongoDB DocumentDB Security Group
-# resource "aws_security_group" "mongodb" {
-#   name_prefix = "${local.sg_names.mongodb}-"
-#   vpc_id      = module.vpc.vpc_id
-#   description = "Security group for MongoDB DocumentDB cluster"
+# MongoDB DocumentDB Security Group
+resource "aws_security_group" "mongodb" {
+  name_prefix = "${local.sg_names.mongodb}-sg"
+  vpc_id      = module.vpc.vpc_id
+  description = "Security group for MongoDB DocumentDB cluster"
 
-#   ingress {
-#     description     = "MongoDB from ECS"
-#     from_port       = 27017
-#     to_port         = 27017
-#     protocol        = "tcp"
-#     security_groups = [aws_security_group.ecs.id]
-#   }
+  ingress {
+    description     = "MongoDB from ECS"
+    from_port       = 27017
+    to_port         = 27017
+    protocol        = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-#   egress {
-#     description = "All outbound traffic"
-#     from_port   = 0
-#     to_port     = 0
-#     protocol    = "-1"
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
+  egress {
+    description = "All outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-#   tags = merge(local.common_tags, {
-#     Name = local.sg_names.mongodb
-#   })
+  tags = merge(local.common_tags, {
+    Name = local.sg_names.mongodb
+  })
 
-#   lifecycle {
-#     create_before_destroy = true
-#   }
-# }
+  lifecycle {
+    create_before_destroy = true
+  }
+}

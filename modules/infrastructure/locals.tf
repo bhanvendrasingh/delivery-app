@@ -39,8 +39,9 @@ locals {
     order-service            = "order-service"
     restaurant-service       = "restaurant-service"
     customer-service         = "customer-service"
+    api-gateway-service      = "api-gateway-service"
   }
   
-  # ECR repository base URI
+  # ECR repository base URI (temporary use)
   ecr_base_uri = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
 }

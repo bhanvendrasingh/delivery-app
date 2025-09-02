@@ -82,6 +82,12 @@ variable "mongodb_password" {
   default     = null
 }
 
+variable "enable_deletion_protection" {
+  description = "Enable deletion protection for critical resources"
+  type        = bool
+  default     = false
+}
+
 # Application Configuration
 variable "applications" {
   description = "Application configuration for ECS services"
@@ -99,8 +105,8 @@ variable "ecr_repositories" {
   description = "ECR repository URLs for microservices"
   type = map(string)
   default = {
-    communication-service     = ""
-    delivery-partner-service  = ""
+    communication-service    = ""
+    delivery-partner-service = ""
     payment-service          = ""
     support-agent-service    = ""
     data-sync-service        = ""
@@ -150,8 +156,3 @@ variable "allowed_cidr_blocks" {
   default     = ["0.0.0.0/0"]
 }
 
-variable "enable_deletion_protection" {
-  description = "Enable deletion protection for critical resources"
-  type        = bool
-  default     = true
-}

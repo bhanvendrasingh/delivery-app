@@ -204,6 +204,30 @@ resource "aws_lb_target_group" "support_agent" {
   })
 }
 
+resource "aws_lb_target_group" "api" {
+  name        = "gobharatapp-api"
+  port        = 8081
+  protocol    = "HTTP"
+  vpc_id      = module.vpc.vpc_id
+  target_type = "instance"
+
+  health_check {
+    enabled             = true
+    healthy_threshold   = 5
+    interval            = 30
+    matcher             = "200"
+    path                = "/api/gateway/health"
+    port                = "traffic-port"
+    protocol            = "HTTP"
+    timeout             = 5
+    unhealthy_threshold = 2
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "gobharatapp-api"
+  })
+}
+
 # Listeners
 resource "aws_lb_listener" "main" {
   load_balancer_arn = aws_lb.main.arn
@@ -377,6 +401,26 @@ resource "aws_lb_listener_rule" "datasync_service" {
   condition {
     path_pattern {
       values = ["/api/data-sync/*", "/data-sync/*"]
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "api_service" {
+  listener_arn = aws_lb_listener.main.arn
+  priority     = 800
+
+  action {
+    type = "forward"
+    forward {
+      target_group {
+        arn = aws_lb_target_group.api.arn
+      }
+    }
+  }
+
+  condition {
+    path_pattern {
+      values = ["/api/gateway/*"]
     }
   }
 }

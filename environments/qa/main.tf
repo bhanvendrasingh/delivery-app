@@ -31,12 +31,16 @@ module "go_bharat_infrastructure" {
   # MongoDB Configuration
   mongodb_cluster = {
     engine_version   = "5.0.0"
-    instance_class   = "db.t4g.medium"
+    instance_class   = "db.t3.medium"
     instance_count   = 1
     backup_retention = 7
     tls_enabled      = true
     kms_key_id       = null
   }
+
+    # MongoDB credentials
+  mongodb_username = "go_bharat_qa"
+  mongodb_password = null # Should be managed via AWS Secrets Manager
   
   # Microservices Configuration
   applications = {
@@ -57,7 +61,7 @@ module "go_bharat_infrastructure" {
     payment-service = {
       image_tag = "payment-service"
       cpu       = 512
-      memory    = 1024
+      memory    = 512
       port      = 8085
       replicas  = 1
     }
@@ -78,22 +82,29 @@ module "go_bharat_infrastructure" {
     order-service = {
       image_tag = "order-service"
       cpu       = 512
-      memory    = 1024
+      memory    = 512
       port      = 8383
       replicas  = 1
     }
     restaurant-service = {
       image_tag = "restaurant-service"
       cpu       = 512
-      memory    = 1024
+      memory    = 512
       port      = 80
       replicas  = 1
     }
     customer-service = {
       image_tag = "customer-service"
       cpu       = 512
-      memory    = 1024
+      memory    = 512
       port      = 8585
+      replicas  = 1
+    }
+    api-gateway-service = {
+      image_tag = "api-gateway-service"
+      cpu       = 512
+      memory    = 512
+      port      = 8081
       replicas  = 1
     }
   }
@@ -105,21 +116,17 @@ module "go_bharat_infrastructure" {
   enable_container_insights = true
   log_retention_days       = 7
   
-  # MongoDB credentials
-  mongodb_username = "go_bharat_qa"
-  mongodb_password = "ChangeMe123!" # Should be managed via AWS Secrets Manager
-  
   # ECR Repository URLs (using existing repository)
-  ecr_repositories = {
-    communication-service     = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
-    delivery-partner-service  = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
-    payment-service          = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
-    support-agent-service    = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
-    data-sync-service        = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
-    order-service            = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
-    restaurant-service       = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
-    customer-service         = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
-  }
+  # ecr_repositories = {
+  #   communication-service     = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
+  #   delivery-partner-service  = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
+  #   payment-service          = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
+  #   support-agent-service    = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
+  #   data-sync-service        = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
+  #   order-service            = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
+  #   restaurant-service       = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
+  #   customer-service         = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
+  # }
   
   # Additional tags
   additional_tags = {
