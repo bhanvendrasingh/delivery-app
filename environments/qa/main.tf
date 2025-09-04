@@ -116,17 +116,18 @@ module "go_bharat_infrastructure" {
   enable_container_insights = true
   log_retention_days       = 7
   
-  # ECR Repository URLs (using existing repository)
-  # ecr_repositories = {
-  #   communication-service     = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
-  #   delivery-partner-service  = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
-  #   payment-service          = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
-  #   support-agent-service    = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
-  #   data-sync-service        = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
-  #   order-service            = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
-  #   restaurant-service       = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
-  #   customer-service         = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
-  # }
+  #ECR Repository URLs (using existing repository)
+  ecr_repositories = {
+    communication-service     = ""
+    delivery-partner-service  = ""
+    payment-service           = ""
+    support-agent-service     = ""
+    data-sync-service         = ""
+    order-service             = ""
+    restaurant-service        = ""
+    customer-service          = ""
+    api-gateway-service       = ""
+  }
   
   # Additional tags
   additional_tags = {

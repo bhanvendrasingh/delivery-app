@@ -69,7 +69,7 @@ resource "aws_ecs_task_definition" "microservices" {
   container_definitions = jsonencode([
     {
       name  = each.value
-      image = var.ecr_repositories[each.key] != "" ? "${var.ecr_repositories[each.key]}:${var.applications[each.key].image_tag}" : "${aws_ecr_repository.microservices[each.key].repository_url}:${var.applications[each.key].image_tag}"
+      image = var.ecr_repositories[each.value] != "" ? "${var.ecr_repositories[each.key]}:${var.applications[each.key].image_tag}" : "${aws_ecr_repository.microservices[each.key].repository_url}:${var.applications[each.key].image_tag}"
       
       cpu          = var.applications[each.key].cpu
       memory       = var.applications[each.key].memory

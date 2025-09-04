@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "microservices" {
-  for_each = toset(local.microservices)
+  for_each = local.microservices
 
   name                 = each.key
   image_tag_mutability = "MUTABLE"
@@ -40,7 +40,7 @@ data "aws_iam_policy_document" "main" {
 }
 
 resource "aws_ecr_repository_policy" "main" {
-for_each = toset(aws_ecr_repository.microservices)
+for_each     = aws_ecr_repository.microservices
   repository = each.value.name
   policy     = data.aws_iam_policy_document.main.json
 }
