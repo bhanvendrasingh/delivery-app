@@ -113,6 +113,7 @@ variable "ecr_repositories" {
     order-service            = ""
     restaurant-service       = ""
     customer-service         = ""
+    api-gateway-service      = ""
   }
 }
 
@@ -156,3 +157,43 @@ variable "allowed_cidr_blocks" {
   default     = ["0.0.0.0/0"]
 }
 
+#elasticsearch configration
+variable "enable_elasticsearch" {
+  description = "Enable Elasticsearch"
+  type        = bool
+  default     = false
+}
+
+variable "dedicated_master_enabled" {
+  description = "Enable dedicated master node"
+  type        = bool
+  default     = false
+}
+
+variable "elasticsearch" {
+  description = "Elasticsearch domain configuration"
+  type = object({
+    version = number
+    instance_type = string
+    instance_count = number
+    dedicated_master_enabled = bool
+    dedicated_master_type = string
+    dedicated_master_count = number
+    volume_size = number
+    tls_enabled = bool
+    kms_key_id = optional(string)
+  })
+}
+
+variable "elasticsearch_master_username" {
+  description = "Elasticsearch master username"
+  type        = string
+  default     = "elastic"
+}
+
+variable "elasticsearch_master_password" {
+  description = "Elasticsearch master password"
+  type        = string
+  sensitive   = true
+  default     = "Ot4Hj8+ZgsX6Es8-rVx5"
+}

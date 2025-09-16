@@ -128,6 +128,20 @@ module "go_bharat_infrastructure" {
     customer-service          = ""
     api-gateway-service       = ""
   }
+
+# elasticsearch configration
+enable_elasticsearch = true
+
+elasticsearch = {
+  version = 7.10
+  instance_type = "t3.small.elasticsearch"
+  instance_count = "1"
+  volume_size = "10"
+  dedicated_master_enabled = false
+  dedicated_master_type = "t3.small.elasticsearch"
+  dedicated_master_count = "0"
+  tls_enabled = true
+}
   
   # Additional tags
   additional_tags = {

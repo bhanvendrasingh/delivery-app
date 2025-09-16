@@ -28,7 +28,7 @@ resource "aws_security_group" "alb" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
   tags = merge(local.common_tags, {
@@ -79,7 +79,7 @@ resource "aws_security_group" "ecs" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
   tags = merge(local.common_tags, {
@@ -93,7 +93,7 @@ resource "aws_security_group" "ecs" {
 
 # MongoDB DocumentDB Security Group
 resource "aws_security_group" "mongodb" {
-  name_prefix = "${local.sg_names.mongodb}-sg"
+  name_prefix = "${local.sg_names.mongodb}-"
   vpc_id      = module.vpc.vpc_id
   description = "Security group for MongoDB DocumentDB cluster"
 
@@ -102,7 +102,7 @@ resource "aws_security_group" "mongodb" {
     from_port       = 27017
     to_port         = 27017
     protocol        = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks     = var.allowed_cidr_blocks
   }
 
   egress {
@@ -110,7 +110,7 @@ resource "aws_security_group" "mongodb" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
   tags = merge(local.common_tags, {
@@ -119,5 +119,46 @@ resource "aws_security_group" "mongodb" {
 
   lifecycle {
     create_before_destroy = true
+  }
+}
+
+# Opensearch(eleastic-search) Security Group
+resource "aws_security_group" "elasticsearch" {
+  name_prefix = "${local.sg_names.elasticsearch}"
+  description = "Security Group for Elasticsearch QA Environment"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    cidr_blocks     = var.allowed_cidr_blocks
+    description     = "Allow HTTPS traffic from private subnets"
+  }
+
+  ingress {
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    cidr_blocks     = var.allowed_cidr_blocks
+    description     = "Placeholder for future configuration"
+  }
+
+  egress {
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"  # All protocols
+    cidr_blocks     = var.allowed_cidr_blocks
+    description     = "Allow all outbound traffic"
+  }
+
+  tags = {
+    Backup       = "Required"
+    CostCenter   = "Engineering"
+    Environment  = "qa"
+    ManagedBy    = "terraform"
+    Name         = "go-bharat-qa-elasticsearch-sg"
+    Owner        = "DevOps Team"
+    Project      = "go-bharat"
   }
 }

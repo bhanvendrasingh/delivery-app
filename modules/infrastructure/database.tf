@@ -36,7 +36,7 @@ resource "aws_docdb_cluster" "main" {
   engine                  = "docdb"
   engine_version          = var.mongodb_cluster.engine_version
   master_username         = var.mongodb_username
-  master_password         = var.mongodb_password != null ? var.mongodb_password : random_password.mongodb_password[0].result
+  master_password         = var.mongodb_password != null ? var.mongodb_password : try(random_password.mongodb_password[0].result, null)
   
   # Network Configuration
   db_subnet_group_name   = aws_docdb_subnet_group.main.name
@@ -97,7 +97,7 @@ resource "aws_ssm_parameter" "mongodb_username" {
 resource "aws_ssm_parameter" "mongodb_password" {
   name  = "/${var.project}/${var.environment}/mongodb/password"
   type  = "SecureString"
-  value = var.mongodb_password != null ? var.mongodb_password : random_password.mongodb_password[0].result
+  value = var.mongodb_password != null ? var.mongodb_password : try(random_password.mongodb_password[0].result, null)
 
   tags = local.common_tags
 
@@ -109,7 +109,7 @@ resource "aws_ssm_parameter" "mongodb_password" {
 resource "aws_ssm_parameter" "mongodb_connection_string" {
   name  = "/${var.project}/${var.environment}/mongodb/connection_string"
   type  = "SecureString"
-  value = "mongodb://${var.mongodb_username}:${var.mongodb_password != null ? var.mongodb_password : random_password.mongodb_password[0].result}@${aws_docdb_cluster.main.endpoint}:27017/${local.mongodb_database}?ssl=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
+  value = "mongodb://${var.mongodb_username}:${var.mongodb_password != null ? var.mongodb_password : try(random_password.mongodb_password[0].result, "")}@${aws_docdb_cluster.main.endpoint}:27017/${local.mongodb_database}?ssl=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
 
   tags = local.common_tags
 

@@ -8,7 +8,6 @@ locals {
       Project     = var.project
       Environment = var.environment
       ManagedBy   = "terraform"
-      CreatedAt   = timestamp()
     },
     var.additional_tags
   )
@@ -27,6 +26,8 @@ locals {
     alb     = "${local.name_prefix}-alb-sg"
     ecs     = "${local.name_prefix}-ecs-sg"
     mongodb = "${local.name_prefix}-mongodb-sg"
+    redis   = "${local.name_prefix}-redis-sg"
+    elasticsearch = "${local.name_prefix}-elasticsearch-sg"
   }
   
   # Microservices configuration
@@ -44,4 +45,16 @@ locals {
   
   # ECR repository base URI (temporary use)
   ecr_base_uri = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat"
+
+  #configration for eleastic search 
+  dedicated_master_enabled = false
+  elasticsearch_config = {
+    cluster_name            = "${local.name_prefix}-elasticsearch"
+    node_name               = "${local.name_prefix}-es-node"
+    security_enabled        = var.environment == "prod"
+    http_ssl_enabled        = var.environment == "prod"
+    transport_ssl_enabled   = var.environment == "prod"
+    monitoring_enabled      = true
+    log_level               = var.environment == "prod" ? "INFO" : "DEBUG"
+  }
 }
