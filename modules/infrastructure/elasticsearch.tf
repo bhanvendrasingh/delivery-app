@@ -34,24 +34,24 @@ resource "aws_elasticsearch_domain" "main" {
   }
 
   encrypt_at_rest {
-    enabled = var.environment == "prod"
+    enabled = true
   }
 
   node_to_node_encryption {
-    enabled = var.environment == "prod"
+    enabled = true
   }
 
   domain_endpoint_options {
-    enforce_https       = var.environment == "prod"
+    enforce_https       = true
     tls_security_policy = "Policy-Min-TLS-1-2-2019-07"
   }
 
   advanced_security_options {
-    enabled                        = var.environment == "prod"
-    internal_user_database_enabled = var.environment == "prod"
+    enabled                        = var.environment == "qa" ||  var.environment == "prod"
+    internal_user_database_enabled = var.environment == "prod" || var.environment == "qa"
 
     dynamic "master_user_options" {
-      for_each = var.environment == "prod" ? [1] : []
+      for_each = var.environment == "prod" || var.environment == "qa" ? [1] : []
       content {
         master_user_name     = var.elasticsearch_master_username
         master_user_password = var.elasticsearch_master_password
@@ -136,7 +136,7 @@ resource "aws_elasticsearch_domain_policy" "main" {
       {
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+          AWS = "*"
         }
         Action   = "es:*"
         Resource = "${aws_elasticsearch_domain.main[0].arn}/*"
