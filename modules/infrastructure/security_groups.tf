@@ -162,3 +162,111 @@ resource "aws_security_group" "elasticsearch" {
     Project      = "go-bharat"
   }
 }
+
+## Redis Security Group
+resource "aws_security_group" "redis" {
+  name_prefix = "${local.sg_names.redis}-"
+  vpc_id      = module.vpc.vpc_id
+  description = "Security group for Redis cluster"
+
+  ingress {
+    description = "Redis from ECS"
+    from_port   = 6379
+    to_port     = 6379
+    protocol    = "tcp"
+    cidr_blocks = var.allowed_cidr_blocks
+  }
+
+  egress {
+    description = "All outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = var.allowed_cidr_blocks
+  }
+
+  tags = merge(local.common_tags, {
+    Name = local.sg_names.redis
+  })
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# Kafka Security Group
+resource "aws_security_group" "kafka" {
+  name_prefix = "${local.sg_names.kafka}-"
+  vpc_id      = module.vpc.vpc_id
+  description = "Security group for Kafka cluster"
+
+  # Kafka broker communication
+  ingress {
+    description = "Kafka broker from ECS and internal"
+    from_port   = 9092
+    to_port     = 9092
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  # Zookeeper communication
+  ingress {
+    description = "Zookeeper client"
+    from_port   = 2181
+    to_port     = 2181
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  # Zookeeper peer communication
+  ingress {
+    description = "Zookeeper peer"
+    from_port   = 2888
+    to_port     = 2888
+    protocol    = "tcp"
+    self        = true
+  }
+
+  # Zookeeper leader election
+  ingress {
+    description = "Zookeeper leader election"
+    from_port   = 3888
+    to_port     = 3888
+    protocol    = "tcp"
+    self        = true
+  }
+
+  # SSH access
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  # JMX monitoring (optional)
+  ingress {
+    description = "JMX monitoring"
+    from_port   = 9999
+    to_port     = 9999
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  egress {
+    description = "All outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(local.common_tags, {
+    Name = local.sg_names.kafka
+  })
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}

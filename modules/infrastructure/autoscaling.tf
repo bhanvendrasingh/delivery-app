@@ -53,6 +53,7 @@ resource "aws_autoscaling_group" "ecs" {
   aws_lb_target_group.order.arn,
   aws_lb_target_group.payment.arn,
   aws_lb_target_group.support_agent.arn,
+  aws_lb_target_group.api,
 ]
   health_check_type   = "ELB"
   health_check_grace_period = 300

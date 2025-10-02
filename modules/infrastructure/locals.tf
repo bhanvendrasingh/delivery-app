@@ -28,6 +28,7 @@ locals {
     mongodb = "${local.name_prefix}-mongodb-sg"
     redis   = "${local.name_prefix}-redis-sg"
     elasticsearch = "${local.name_prefix}-elasticsearch-sg"
+    kafka   = "${local.name_prefix}-kafka-sg"
   }
   
   # Microservices configuration

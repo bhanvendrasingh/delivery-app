@@ -118,30 +118,49 @@ module "go_bharat_infrastructure" {
   
   #ECR Repository URLs (using existing repository)
   ecr_repositories = {
-    communication-service     = ""
+    communication-service     = "" 
     delivery-partner-service  = ""
     payment-service           = ""
     support-agent-service     = ""
     data-sync-service         = ""
     order-service             = ""
-    restaurant-service        = ""
+    restaurant-service        = ""  ## Dependency on elastic search, redish, mongo
     customer-service          = ""
-    api-gateway-service       = ""
+    api-gateway-service       = ""  ## working
   }
 
-# elasticsearch configration
-enable_elasticsearch = true
-
-elasticsearch = {
-  version = 7.10
-  instance_type = "t3.small.elasticsearch"
-  instance_count = "1"
-  volume_size = "10"
-  dedicated_master_enabled = false
-  dedicated_master_type = "t3.small.elasticsearch"
-  dedicated_master_count = "0"
-  tls_enabled = true
-}
+  # elasticsearch configration
+  enable_elasticsearch = true
+  elasticsearch = {
+    version = "7.10"
+    instance_type = "t3.small.elasticsearch"
+    instance_count = "1"
+    volume_size = "10"
+    dedicated_master_enabled = false
+    dedicated_master_type = "t3.small.elasticsearch"
+    dedicated_master_count = "0"
+    tls_enabled = true
+  }
+  
+  # Redis Configuratio
+  redis = {
+    engine_version = "7.2"
+    engine = "valkey"
+    node_type = "cache.t3.micro"  
+    num_cache_clusters = 1
+    parameter_group_name = "default.valkey7"
+    port = 6379
+  }
+  
+  # Kafka Configuration
+  kafka_public_key = file("~/.ssh/id_rsa.pub")
+  kafka = {
+    instance_count = "1"
+    instance_type  = "t3.small"  # Free tier eligible
+    volume_size    = "20"
+    tls_enabled    = "true"
+    key_name       = "go-bharat-kafka-ec2"
+    }
   
   # Additional tags
   additional_tags = {
@@ -150,3 +169,4 @@ elasticsearch = {
     Backup      = "Required"
   }
 }
+

@@ -7,7 +7,7 @@ resource "aws_elasticsearch_domain" "main" {
   cluster_config {
     instance_type             = var.elasticsearch.instance_type
     instance_count            = var.environment == "prod" ? 2 : 1
-    dedicated_master_enabled  = var.dedicated_master_enabled
+    dedicated_master_enabled  = var.elasticsearch.dedicated_master_enabled
     dedicated_master_type     = var.elasticsearch.dedicated_master_type
     dedicated_master_count    = var.elasticsearch.dedicated_master_count
     zone_awareness_enabled    = var.environment == "prod"
@@ -80,6 +80,9 @@ resource "aws_elasticsearch_domain" "main" {
   tags = local.common_tags
 
   depends_on = [aws_iam_service_linked_role.elasticsearch]
+  lifecycle {
+    ignore_changes = [elasticsearch_version]
+  }
 }
 
 

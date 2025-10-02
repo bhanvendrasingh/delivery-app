@@ -164,12 +164,6 @@ variable "enable_elasticsearch" {
   default     = false
 }
 
-variable "dedicated_master_enabled" {
-  description = "Enable dedicated master node"
-  type        = bool
-  default     = false
-}
-
 variable "elasticsearch" {
   description = "Elasticsearch domain configuration"
   type = object({
@@ -196,4 +190,34 @@ variable "elasticsearch_master_password" {
   type        = string
   sensitive   = true
   default     = "Ot4Hj8+ZgsX6Es8-rVx5"
+}
+
+## Redis Configration
+variable "redis" {
+  description = "Redis cache configuration"
+  type = object({
+    engine_version = string
+    engine = string
+    node_type = string
+    num_cache_clusters = number 
+    parameter_group_name = string
+    port = number
+  })
+}
+
+# Kafka ec2 Configuration
+variable "kafka_public_key" {
+  description = "Kafka public key"
+  type        = string
+}
+  
+variable "kafka" {
+  description = "Kafka configuration"
+  type = object({
+    instance_type = string
+    instance_count = number
+    volume_size = number
+    tls_enabled = bool
+    key_name = string
+  })
 }
