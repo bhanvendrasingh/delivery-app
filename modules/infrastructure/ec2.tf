@@ -42,4 +42,7 @@ resource "aws_instance" "kafka" {
       Name = "${local.name_prefix}-kafka-${count.index}-root"
     })
   }
+  tags = {
+    Name = "kafka server"
+  }
 }

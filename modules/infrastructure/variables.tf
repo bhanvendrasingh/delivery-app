@@ -56,6 +56,12 @@ variable "spot_instances" {
   })
 }
 
+## key for autoscalling group
+variable "ecs-ec2-key" {
+  description = "Key for ECS EC2 instances"
+  type        = string
+}
+
 # MongoDB Configuration
 variable "mongodb_cluster" {
   description = "MongoDB DocumentDB cluster configuration"
@@ -206,10 +212,10 @@ variable "redis" {
 }
 
 # Kafka ec2 Configuration
-variable "kafka_public_key" {
-  description = "Kafka public key"
-  type        = string
-}
+# variable "kafka_public_key" {
+#   description = "Kafka public key"
+#   type        = string
+# }
   
 variable "kafka" {
   description = "Kafka configuration"
@@ -220,4 +226,23 @@ variable "kafka" {
     tls_enabled = bool
     key_name = string
   })
+}
+
+# Auto Scaling Configuration
+variable "cpu_scale_up_threshold" {
+  description = "CPU threshold for scaling up (percentage)"
+  type        = number
+  default     = 90
+}
+
+variable "cpu_scale_down_threshold" {
+  description = "CPU threshold for scaling down (percentage)"
+  type        = number
+  default     = 40
+}
+
+variable "scaling_cooldown" {
+  description = "Cooldown period for scaling actions (seconds)"
+  type        = number
+  default     = 300
 }

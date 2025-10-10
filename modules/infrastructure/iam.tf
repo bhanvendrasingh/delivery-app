@@ -23,6 +23,12 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+resource "aws_iam_role_policy_attachment" "ec2_ssm" {
+  role       = aws_iam_role.ecs_task_execution.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedEC2InstanceDefaultPolicy"
+}
+
+
 # Additional policy for accessing SSM parameters and Secrets Manager
 resource "aws_iam_role_policy" "ecs_task_execution_ssm" {
   name = "${local.name_prefix}-ecs-task-execution-ssm-policy"
@@ -39,7 +45,7 @@ resource "aws_iam_role_policy" "ecs_task_execution_ssm" {
           "ssm:GetParametersByPath"
         ]
         Resource = [
-          "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${var.project}/${var.environment}/*"
+          "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${var.project}-${var.environment}/*"
         ]
       },
       {

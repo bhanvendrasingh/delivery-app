@@ -1,9 +1,9 @@
 # Launch Template for ECS instances
 resource "aws_launch_template" "ecs" {
-  name_prefix   = "${local.name_prefix}-ecs-"
+  name_prefix   = "${local.name_prefix}-ecs"
   image_id      = data.aws_ami.ecs_optimized.id
   instance_type = var.instance_types[0]
-  key_name      = aws_key_pair.main.key_name
+  key_name      = var.ecs-ec2-key
 
   vpc_security_group_ids = [aws_security_group.ecs.id]
 
@@ -44,18 +44,7 @@ resource "aws_launch_template" "ecs" {
 resource "aws_autoscaling_group" "ecs" {
   name                = "${local.name_prefix}-ecs-asg"
   vpc_zone_identifier = module.vpc.private_subnets
-  target_group_arns = [
-  aws_lb_target_group.restaurant.arn,
-  aws_lb_target_group.communication.arn,
-  aws_lb_target_group.customer.arn,
-  aws_lb_target_group.datasyncservice.arn,
-  aws_lb_target_group.delivery.arn,
-  aws_lb_target_group.order.arn,
-  aws_lb_target_group.payment.arn,
-  aws_lb_target_group.support_agent.arn,
-  aws_lb_target_group.api,
-]
-  health_check_type   = "ELB"
+  health_check_type   = "EC2"
   health_check_grace_period = 300
 
   min_size         = var.spot_instances.min
@@ -107,6 +96,101 @@ resource "aws_autoscaling_group" "ecs" {
   }
 }
 
+# Auto Scaling Policies
+resource "aws_autoscaling_policy" "scale_up" {
+  name                   = "${local.name_prefix}-ecs-scale-up"
+  scaling_adjustment     = 1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown              = var.scaling_cooldown
+  autoscaling_group_name = aws_autoscaling_group.ecs.name
+  policy_type           = "SimpleScaling"
+}
+
+resource "aws_autoscaling_policy" "scale_down" {
+  name                   = "${local.name_prefix}-ecs-scale-down"
+  scaling_adjustment     = -1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown              = var.scaling_cooldown
+  autoscaling_group_name = aws_autoscaling_group.ecs.name
+  policy_type           = "SimpleScaling"
+}
+
+# CloudWatch Alarms for CPU-based scaling
+resource "aws_cloudwatch_metric_alarm" "cpu_high" {
+  alarm_name          = "${local.name_prefix}-ecs-cpu-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = var.cpu_scale_up_threshold
+  alarm_description   = "This metric monitors EC2 CPU utilization for scaling up"
+  alarm_actions       = [aws_autoscaling_policy.scale_up.arn]
+
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.ecs.name
+  }
+
+  tags = local.common_tags
+}
+
+resource "aws_cloudwatch_metric_alarm" "cpu_low" {
+  alarm_name          = "${local.name_prefix}-ecs-cpu-low"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = var.cpu_scale_down_threshold
+  alarm_description   = "This metric monitors EC2 CPU utilization for scaling down"
+  alarm_actions       = [aws_autoscaling_policy.scale_down.arn]
+
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.ecs.name
+  }
+
+  tags = local.common_tags
+}
+
+# ECS Cluster Capacity Provider Auto Scaling
+resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {
+  alarm_name          = "${local.name_prefix}-ecs-cluster-cpu-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "80"
+  alarm_description   = "This metric monitors ECS cluster CPU utilization"
+
+  dimensions = {
+    ClusterName = aws_ecs_cluster.main.name
+  }
+
+  tags = local.common_tags
+}
+
+resource "aws_cloudwatch_metric_alarm" "ecs_memory_high" {
+  alarm_name          = "${local.name_prefix}-ecs-cluster-memory-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "MemoryUtilization"
+  namespace           = "AWS/ECS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "80"
+  alarm_description   = "This metric monitors ECS cluster memory utilization"
+
+  dimensions = {
+    ClusterName = aws_ecs_cluster.main.name
+  }
+
+  tags = local.common_tags
+}
+
 # Data source for ECS optimized AMI
 data "aws_ami" "ecs_optimized" {
   most_recent = true
@@ -123,10 +207,10 @@ data "aws_ami" "ecs_optimized" {
   }
 }
 
-# Key Pair
-resource "aws_key_pair" "main" {
-  key_name   = "${local.name_prefix}-key"
-  public_key = file("~/.ssh/id_rsa.pub")
+# # Key Pair
+# resource "aws_key_pair" "main" {
+#   key_name   = "${local.name_prefix}-key"
+#   public_key = file("~/.ssh/id_rsa.pub")
 
-  tags = local.common_tags
-}
+#   tags = local.common_tags
+# }

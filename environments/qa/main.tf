@@ -24,9 +24,12 @@ module "go_bharat_infrastructure" {
   # Compute Configuration
   instance_types = ["t3.medium", "t3.large"]
   spot_instances = {
-    min = 1
-    max = 2
+    min = 2
+    max = 5
   }
+
+  ## key for autoscalling
+  ecs-ec2-key = "go-bharat"
   
   # MongoDB Configuration
   mongodb_cluster = {
@@ -90,7 +93,7 @@ module "go_bharat_infrastructure" {
       image_tag = "restaurant-service"
       cpu       = 512
       memory    = 512
-      port      = 80
+      port      = 8282
       replicas  = 1
     }
     customer-service = {
@@ -153,7 +156,7 @@ module "go_bharat_infrastructure" {
   }
   
   # Kafka Configuration
-  kafka_public_key = file("~/.ssh/id_rsa.pub")
+  # kafka_public_key = file("~/.ssh/id_rsa.pub")
   kafka = {
     instance_count = "1"
     instance_type  = "t3.small"  # Free tier eligible

@@ -69,8 +69,8 @@ resource "aws_ecs_task_definition" "microservices" {
   container_definitions = jsonencode([
     {
       name  = each.value
-      image = var.ecr_repositories[each.value] != "" ? "${var.ecr_repositories[each.key]}:${var.applications[each.key].image_tag}" : "${aws_ecr_repository.microservices[each.key].repository_url}:${var.applications[each.key].image_tag}"
-      
+      # image = var.ecr_repositories[each.value] != "" ? "${var.ecr_repositories[each.key]}:${var.applications[each.key].image_tag}" : "${aws_ecr_repository.microservices[each.key].repository_url}:${var.applications[each.key].image_tag}"
+      image = "692859922629.dkr.ecr.ap-south-2.amazonaws.com/gobharat/temp-gobharat:${each.value}"
       cpu          = var.applications[each.key].cpu
       memory       = var.applications[each.key].memory
       essential    = true
@@ -78,7 +78,7 @@ resource "aws_ecs_task_definition" "microservices" {
       portMappings = [
         {
           containerPort = var.applications[each.key].port
-          hostPort      = var.applications[each.key].port
+          hostPort      = 0
           protocol      = "tcp"
         }
       ]
@@ -107,7 +107,12 @@ resource "aws_ecs_task_definition" "microservices" {
         }
       ]
 
+      ## Note: Springboot will use env over application.properties 
       secrets = [
+        {
+          name      = "SPRING_DATA_REDIS_HOST"
+          valueFrom = aws_ssm_parameter.redis_endpoint.arn
+        },
         {
           name      = "MONGODB_PASSWORD"
           valueFrom = aws_ssm_parameter.mongodb_password.arn
@@ -137,6 +142,8 @@ resource "aws_ecs_service" "communication" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.microservices["communication-service"].arn
   desired_count   = var.applications["communication-service"].replicas
+  
+  health_check_grace_period_seconds = 120
 
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.main.name
@@ -158,6 +165,8 @@ resource "aws_ecs_service" "delivery" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.microservices["delivery-partner-service"].arn
   desired_count   = var.applications["delivery-partner-service"].replicas
+  
+  health_check_grace_period_seconds = 120
 
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.main.name
@@ -179,6 +188,8 @@ resource "aws_ecs_service" "payment" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.microservices["payment-service"].arn
   desired_count   = var.applications["payment-service"].replicas
+  
+  health_check_grace_period_seconds = 120
 
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.main.name
@@ -200,6 +211,8 @@ resource "aws_ecs_service" "support_agent" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.microservices["support-agent-service"].arn
   desired_count   = var.applications["support-agent-service"].replicas
+  
+  health_check_grace_period_seconds = 120
 
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.main.name
@@ -221,6 +234,8 @@ resource "aws_ecs_service" "data_sync" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.microservices["data-sync-service"].arn
   desired_count   = var.applications["data-sync-service"].replicas
+  
+  health_check_grace_period_seconds = 120
 
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.main.name
@@ -242,6 +257,8 @@ resource "aws_ecs_service" "order" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.microservices["order-service"].arn
   desired_count   = var.applications["order-service"].replicas
+  
+  health_check_grace_period_seconds = 120
 
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.main.name
@@ -263,6 +280,8 @@ resource "aws_ecs_service" "restaurant" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.microservices["restaurant-service"].arn
   desired_count   = var.applications["restaurant-service"].replicas
+  
+  health_check_grace_period_seconds = 120
 
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.main.name
@@ -284,6 +303,8 @@ resource "aws_ecs_service" "customer" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.microservices["customer-service"].arn
   desired_count   = var.applications["customer-service"].replicas
+  
+  health_check_grace_period_seconds = 120
 
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.main.name
@@ -305,6 +326,8 @@ resource "aws_ecs_service" "api" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.microservices["api-gateway-service"].arn
   desired_count   = var.applications["api-gateway-service"].replicas
+  
+  health_check_grace_period_seconds = 120
 
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.main.name
@@ -312,7 +335,7 @@ resource "aws_ecs_service" "api" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.customer.arn
+    target_group_arn = aws_lb_target_group.api.arn
     container_name   = "api-gateway-service"
     container_port   = var.applications["api-gateway-service"].port
   }

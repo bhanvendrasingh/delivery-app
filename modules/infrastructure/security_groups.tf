@@ -46,32 +46,22 @@ resource "aws_security_group" "ecs" {
   vpc_id      = module.vpc.vpc_id
   description = "Security group for ECS microservices"
 
-  # Allow traffic from ALB to all microservices ports
-  dynamic "ingress" {
-    for_each = var.applications
-    content {
-      description     = "HTTP from ALB to ${ingress.key}"
-      from_port       = ingress.value.port
-      to_port         = ingress.value.port
-      protocol        = "tcp"
-      security_groups = [aws_security_group.alb.id]
-    }
+  # Allow all TCP traffic from ALB (for dynamic port mapping)
+  ingress {
+    description     = "All TCP from ALB"
+    from_port       = 0
+    to_port         = 65535
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
   }
 
-  # Allow inter-service communication within ECS cluster
+  # Allow all TCP traffic from VPC (for inter-service communication and dynamic ports)
   ingress {
-    description = "Inter-service communication"
-    from_port   = 27017
-    to_port     = 27017
+    description = "All TCP from VPC"
+    from_port   = 0
+    to_port     = 65535
     protocol    = "tcp"
-    self        = true
-  }
-
-  ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
   egress {
@@ -98,11 +88,11 @@ resource "aws_security_group" "mongodb" {
   description = "Security group for MongoDB DocumentDB cluster"
 
   ingress {
-    description     = "MongoDB from ECS"
-    from_port       = 27017
-    to_port         = 27017
-    protocol        = "tcp"
-    cidr_blocks     = var.allowed_cidr_blocks
+    description = "MongoDB from VPC"
+    from_port   = 27017
+    to_port     = 27017
+    protocol    = "tcp"
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
   egress {
@@ -129,19 +119,19 @@ resource "aws_security_group" "elasticsearch" {
   vpc_id      = module.vpc.vpc_id
 
   ingress {
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    cidr_blocks     = var.allowed_cidr_blocks
-    description     = "Allow HTTPS traffic from private subnets"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = var.allowed_cidr_blocks
+    description = "Allow HTTPS traffic from VPC"
   }
 
   ingress {
-    from_port       = 80
-    to_port         = 80
-    protocol        = "tcp"
-    cidr_blocks     = var.allowed_cidr_blocks
-    description     = "Placeholder for future configuration"
+    from_port   = 9200
+    to_port     = 9200
+    protocol    = "tcp"
+    cidr_blocks = var.allowed_cidr_blocks
+    description = "Elasticsearch HTTP API from VPC"
   }
 
   egress {
@@ -174,7 +164,7 @@ resource "aws_security_group" "redis" {
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
-    cidr_blocks = var.allowed_cidr_blocks
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -182,7 +172,7 @@ resource "aws_security_group" "redis" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = var.allowed_cidr_blocks
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = merge(local.common_tags, {
@@ -200,22 +190,31 @@ resource "aws_security_group" "kafka" {
   vpc_id      = module.vpc.vpc_id
   description = "Security group for Kafka cluster"
 
-  # Kafka broker communication
+  # SSH access (corrected CIDR)
   ingress {
-    description = "Kafka broker from ECS and internal"
+    description = "SSH from VPC"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = var.allowed_cidr_blocks
+  }
+
+  # Kafka broker
+  ingress {
+    description = "Kafka broker from VPC"
     from_port   = 9092
     to_port     = 9092
     protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
-  # Zookeeper communication
+  # Kafka controller (for KRaft mode)
   ingress {
-    description = "Zookeeper client"
-    from_port   = 2181
-    to_port     = 2181
+    description = "Kafka controller"
+    from_port   = 9093
+    to_port     = 9093
     protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
   # Zookeeper peer communication
@@ -227,6 +226,24 @@ resource "aws_security_group" "kafka" {
     self        = true
   }
 
+  # Zookeeper client
+  ingress {
+    description = "Zookeeper client"
+    from_port   = 2181
+    to_port     = 2181
+    protocol    = "tcp"
+    cidr_blocks = var.allowed_cidr_blocks
+  }
+
+  # JMX monitoring
+  ingress {
+    description = "JMX monitoring"
+    from_port   = 9999
+    to_port     = 9999
+    protocol    = "tcp"
+    cidr_blocks = var.allowed_cidr_blocks
+  }
+
   # Zookeeper leader election
   ingress {
     description = "Zookeeper leader election"
@@ -234,24 +251,6 @@ resource "aws_security_group" "kafka" {
     to_port     = 3888
     protocol    = "tcp"
     self        = true
-  }
-
-  # SSH access
-  ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
-  }
-
-  # JMX monitoring (optional)
-  ingress {
-    description = "JMX monitoring"
-    from_port   = 9999
-    to_port     = 9999
-    protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
   }
 
   egress {

@@ -38,7 +38,7 @@ resource "aws_lb_target_group" "restaurant" {
 
 resource "aws_lb_target_group" "communication" {
   name        = "gobharatapp-communication"
-  port        = 8787
+  port        = 80
   protocol    = "HTTP"
   vpc_id      = module.vpc.vpc_id
   target_type = "instance"
@@ -62,7 +62,7 @@ resource "aws_lb_target_group" "communication" {
 
 resource "aws_lb_target_group" "customer" {
   name        = "gobharatapp-customer"
-  port        = 8585
+  port        = 80
   protocol    = "HTTP"
   vpc_id      = module.vpc.vpc_id
   target_type = "instance"
@@ -86,7 +86,7 @@ resource "aws_lb_target_group" "customer" {
 
 resource "aws_lb_target_group" "datasyncservice" {
   name        = "gobharatapp-datasyncservice"
-  port        = 9797
+  port        = 80
   protocol    = "HTTP"
   vpc_id      = module.vpc.vpc_id
   target_type = "instance"
@@ -110,7 +110,7 @@ resource "aws_lb_target_group" "datasyncservice" {
 
 resource "aws_lb_target_group" "delivery" {
   name        = "gobharatapp-delivery"
-  port        = 8686
+  port        = 80
   protocol    = "HTTP"
   vpc_id      = module.vpc.vpc_id
   target_type = "instance"
@@ -134,7 +134,7 @@ resource "aws_lb_target_group" "delivery" {
 
 resource "aws_lb_target_group" "order" {
   name        = "gobharatapp-order"
-  port        = 8383
+  port        = 80
   protocol    = "HTTP"
   vpc_id      = module.vpc.vpc_id
   target_type = "instance"
@@ -158,7 +158,7 @@ resource "aws_lb_target_group" "order" {
 
 resource "aws_lb_target_group" "payment" {
   name        = "gobharatapp-payment"
-  port        = 8085
+  port        = 80
   protocol    = "HTTP"
   vpc_id      = module.vpc.vpc_id
   target_type = "instance"
@@ -182,7 +182,7 @@ resource "aws_lb_target_group" "payment" {
 
 resource "aws_lb_target_group" "support_agent" {
   name        = "gobharatapp-support-agent"
-  port        = 9191
+  port        = 80
   protocol    = "HTTP"
   vpc_id      = module.vpc.vpc_id
   target_type = "instance"
@@ -206,7 +206,7 @@ resource "aws_lb_target_group" "support_agent" {
 
 resource "aws_lb_target_group" "api" {
   name        = "gobharatapp-api"
-  port        = 8081
+  port        = 80
   protocol    = "HTTP"
   vpc_id      = module.vpc.vpc_id
   target_type = "instance"
