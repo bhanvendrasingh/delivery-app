@@ -1,0 +1,160 @@
+stages:
+  - validate
+  - plan
+  - deploy
+  - destroy
+
+variables:
+  TF_ROOT: ${CI_PROJECT_DIR}
+  TF_ADDRESS: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${CI_ENVIRONMENT_NAME}
+  TF_IN_AUTOMATION: "true"
+
+.terraform_template: &terraform_template
+  image: 
+    name: hashicorp/terraform:1.6
+    entrypoint: [""]
+  before_script:
+    - cd ${TF_ROOT}/environments/${CI_ENVIRONMENT_NAME}
+    - terraform --version
+    - terraform init
+  cache:
+    key: "${CI_ENVIRONMENT_NAME}"
+    paths:
+      - ${TF_ROOT}/environments/${CI_ENVIRONMENT_NAME}/.terraform
+
+# QA Environment Jobs
+validate:qa:
+  <<: *terraform_template
+  stage: validate
+  variables:
+    CI_ENVIRONMENT_NAME: qa
+  script:
+    - terraform validate
+    - terraform fmt -check
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - changes:
+        - "environments/qa/**/*"
+        - "modules/**/*"
+
+plan:qa:
+  <<: *terraform_template
+  stage: plan
+  variables:
+    CI_ENVIRONMENT_NAME: qa
+  script:
+    - terraform plan -out="planfile"
+  artifacts:
+    name: plan-qa
+    paths:
+      - ${TF_ROOT}/environments/qa/planfile
+    expire_in: 1 week
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - changes:
+        - "environments/qa/**/*"
+        - "modules/**/*"
+
+deploy:qa:
+  <<: *terraform_template
+  stage: deploy
+  variables:
+    CI_ENVIRONMENT_NAME: qa
+  script:
+    - terraform apply -input=false "planfile"
+  environment:
+    name: qa
+    url: http://$ALB_DNS_NAME
+  dependencies:
+    - plan:qa
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+    - changes:
+        - "environments/qa/**/*"
+        - "modules/**/*"
+
+# Production Environment Jobs
+validate:prod:
+  <<: *terraform_template
+  stage: validate
+  variables:
+    CI_ENVIRONMENT_NAME: prod
+  script:
+    - terraform validate
+    - terraform fmt -check
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - changes:
+        - "environments/prod/**/*"
+        - "modules/**/*"
+
+plan:prod:
+  <<: *terraform_template
+  stage: plan
+  variables:
+    CI_ENVIRONMENT_NAME: prod
+  script:
+    - terraform plan -out="planfile"
+  artifacts:
+    name: plan-prod
+    paths:
+      - ${TF_ROOT}/environments/prod/planfile
+    expire_in: 1 week
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - changes:
+        - "environments/prod/**/*"
+        - "modules/**/*"
+
+deploy:prod:
+  <<: *terraform_template
+  stage: deploy
+  variables:
+    CI_ENVIRONMENT_NAME: prod
+  script:
+    - terraform apply -input=false "planfile"
+  environment:
+    name: production
+    url: https://$ALB_DNS_NAME
+  dependencies:
+    - plan:prod
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+    - changes:
+        - "environments/prod/**/*"
+        - "modules/**/*"
+
+# Destroy Jobs (Manual only)
+destroy:qa:
+  <<: *terraform_template
+  stage: destroy
+  variables:
+    CI_ENVIRONMENT_NAME: qa
+  script:
+    - terraform destroy -auto-approve
+  environment:
+    name: qa
+    action: stop
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+      allow_failure: true
+
+destroy:prod:
+  <<: *terraform_template
+  stage: destroy
+  variables:
+    CI_ENVIRONMENT_NAME: prod
+  script:
+    - terraform destroy -auto-approve
+  environment:
+    name: production
+    action: stop
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+      allow_failure: true
