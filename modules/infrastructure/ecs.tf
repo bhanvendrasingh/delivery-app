@@ -104,31 +104,27 @@ resource "aws_ecs_task_definition" "microservices" {
         {
           name  = "SERVICE_NAME"
           value = each.value
+        },
+        {
+          name  = "OPENSEARCH_REGION"
+          value = var.aws_region
         }
       ]
 
       ## Note: Springboot will use env over application.properties 
       secrets = [
         {
-          name      = "SPRING_DATA_REDIS_HOST"
-          valueFrom = aws_ssm_parameter.redis_endpoint.arn
+          name      = "OPENSEARCH_ENDPOINT"
+          valueFrom = aws_ssm_parameter.elasticsearch_endpoint[0].name
         },
         {
-          name      = "MONGODB_PASSWORD"
-          valueFrom = aws_ssm_parameter.mongodb_password.arn
+          name      = "OPENSEARCH_USERNAME"
+          valueFrom = aws_ssm_parameter.elasticsearch_username.name
         },
         {
-          name      = "MONGODB_CONNECTION_STRING"
-          valueFrom = aws_ssm_parameter.mongodb_connection_string.arn
+          name      = "OPENSEARCH_PASSWORD"
+          valueFrom = aws_ssm_parameter.elasticsearch_password.name
         },
-        {
-          name      = "MONGODB_USERNAME"
-          valueFrom = aws_ssm_parameter.mongodb_username.arn
-        },
-        {
-          name      = "MONGODB_ENDPOINT"
-          valueFrom = aws_ssm_parameter.mongodb_endpoint.arn
-        }
       ]
     }
   ])
