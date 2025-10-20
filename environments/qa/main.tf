@@ -44,6 +44,7 @@ module "go_bharat_infrastructure" {
     # MongoDB credentials
   mongodb_username = "go_bharat_qa"
   mongodb_password = null # Should be managed via AWS Secrets Manager
+  mongodb_uri = "mongodb://go_bharat_qa:uPm7j8E05h2L0wci@go-bharat-qa-mongodb-cluster.cluster-cheo4so26vyv.ap-south-2.docdb.amazonaws.com:27017/go_bharat_qa?ssl=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
   
   # Microservices Configuration
   applications = {

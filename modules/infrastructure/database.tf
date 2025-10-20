@@ -133,3 +133,11 @@ resource "aws_ssm_parameter" "mongodb_port" {
 
   tags = local.common_tags
 }
+
+resource "aws_ssm_parameter" "mongodb_uri" {
+  name  = "/${var.project}/${var.environment}/mongodb/uri"
+  type  = "SecureString"
+  value = var.mongodb_uri
+
+  tags = local.common_tags
+}

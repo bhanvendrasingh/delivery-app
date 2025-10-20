@@ -125,6 +125,18 @@ resource "aws_ecs_task_definition" "microservices" {
           name      = "OPENSEARCH_PASSWORD"
           valueFrom = aws_ssm_parameter.elasticsearch_password.name
         },
+        {
+          name      = "MONGO_URI"
+          valueFrom = aws_ssm_parameter.mongodb_uri.name
+        },
+        {
+          name      = "MONGO_PASS"
+          valueFrom = aws_ssm_parameter.mongodb_password.name
+        },
+        {
+          name      = "REDIS_URI"
+          valueFrom = aws_ssm_parameter.redis_endpoint.name
+        }
       ]
     }
   ])

@@ -153,7 +153,7 @@ resource "aws_ssm_parameter" "elasticsearch_endpoint" {
   count = var.enable_elasticsearch ? 1 : 0
   name  = "/${var.project}/${var.environment}/elasticsearch/endpoint"
   type  = "String"
-  value = aws_elasticsearch_domain.main[0].endpoint
+  value = "https://${aws_elasticsearch_domain.main[0].endpoint}"
 
   tags = local.common_tags
 }

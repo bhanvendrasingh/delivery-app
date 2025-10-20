@@ -88,6 +88,13 @@ variable "mongodb_password" {
   default     = null
 }
 
+variable "mongodb_uri" {
+  description = "Complete MongoDB connection URI"
+  type        = string
+  sensitive   = true
+  default     = null
+}
+
 variable "enable_deletion_protection" {
   description = "Enable deletion protection for critical resources"
   type        = bool
