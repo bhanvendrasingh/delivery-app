@@ -13,6 +13,12 @@ terraform {
   }
 }
 
+# Additional AWS provider for us-east-1 (for S3 data buckets)
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+}
+
 # Data sources
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}

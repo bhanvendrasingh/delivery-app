@@ -112,3 +112,54 @@ resource "aws_iam_instance_profile" "ecs_instance" {
 
   tags = local.common_tags
 }
+
+# S3 Bucket Policy for CloudFront Access
+resource "aws_s3_bucket_policy" "website" {
+  count  = var.enable_website ? 1 : 0
+  bucket = aws_s3_bucket.website[0].id
+
+  policy = jsonencode({
+    Version = "2008-10-17"
+    Id      = "PolicyForCloudFrontPrivateContent"
+    Statement = [
+      {
+        Sid    = "AllowCloudFrontServicePrincipal"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action   = "s3:GetObject"
+        Resource = "${aws_s3_bucket.website[0].arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.website[0].arn
+          }
+        }
+      }
+    ]
+  })
+
+  depends_on = [aws_s3_bucket_public_access_block.website]
+}
+
+# S3 Bucket Policy for Data Bucket Public Read Access
+resource "aws_s3_bucket_policy" "data" {
+  count    = var.enable_data_bucket ? 1 : 0
+  bucket   = aws_s3_bucket.data[0].id
+  provider = aws.us_east_1
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowPublicRead"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.data[0].arn}/*"
+      }
+    ]
+  })
+
+  depends_on = [aws_s3_bucket_public_access_block.data]
+}

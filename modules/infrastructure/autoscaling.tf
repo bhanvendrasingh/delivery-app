@@ -49,7 +49,7 @@ resource "aws_autoscaling_group" "ecs" {
 
   min_size         = var.spot_instances.min
   max_size         = var.spot_instances.max
-  desired_capacity = var.spot_instances.min
+  desired_capacity = var.spot_instances.desired
 
   capacity_rebalance = true
   force_delete      = true

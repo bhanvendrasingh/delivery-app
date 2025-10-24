@@ -53,6 +53,7 @@ variable "spot_instances" {
   type = object({
     min = number
     max = number
+    desired = number
   })
 }
 
@@ -252,4 +253,51 @@ variable "scaling_cooldown" {
   description = "Cooldown period for scaling actions (seconds)"
   type        = number
   default     = 300
+}
+
+# Website Configuration
+variable "enable_website" {
+  description = "Enable S3 + CloudFront website hosting"
+  type        = bool
+  default     = false
+}
+
+variable "website_config" {
+  description = "Website hosting configuration"
+  type = object({
+    default_root_object   = optional(string, "index.html")
+    custom_domain        = optional(string)
+    ssl_certificate_arn  = optional(string)
+    price_class         = optional(string, "PriceClass_100")
+    alb_domain_name     = optional(string)
+  })
+  default = {
+    default_root_object = "index.html"
+    custom_domain      = null
+    ssl_certificate_arn = null
+    price_class        = "PriceClass_100"
+    alb_domain_name    = null
+  }
+}
+
+# Data Bucket Configuration
+variable "enable_data_bucket" {
+  description = "Enable S3 data bucket"
+  type        = bool
+  default     = false
+}
+
+# WAF Configuration (Production Only)
+variable "waf_config" {
+  description = "WAF configuration for production environment"
+  type = object({
+    rate_limit        = optional(number, 2000)
+    blocked_countries = optional(list(string), [])
+    allowed_ips       = optional(list(string), [])
+  })
+  default = {
+    rate_limit        = 2000
+    blocked_countries = []
+    allowed_ips       = []
+  }
 }

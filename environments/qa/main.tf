@@ -26,6 +26,7 @@ module "go_bharat_infrastructure" {
   spot_instances = {
     min = 2
     max = 5
+    desired = 3
   }
 
   ## key for autoscalling
@@ -114,7 +115,8 @@ module "go_bharat_infrastructure" {
   }
   
   # Load Balancer Configuration
-  enable_https = false
+  enable_https = true
+  ssl_certificate_arn = "arn:aws:acm:ap-south-2:692859922629:certificate/cbe34c17-b40e-486b-a2b0-72d27610dcc0"  # Replace with your actual certificate ARN
   
   # Monitoring Configuration
   enable_container_insights = true
@@ -165,6 +167,19 @@ module "go_bharat_infrastructure" {
     tls_enabled    = "true"
     key_name       = "go-bharat-kafka-ec2"
     }
+  
+  # Website Configuration
+  enable_website = true
+  website_config = {
+    default_root_object  = "index.html"
+    custom_domain       = null  # Set to your QA domain (e.g., "qa.gobharatfresh.com")
+    ssl_certificate_arn = null  # Add your SSL certificate ARN if you have a custom domain
+    price_class        = "PriceClass_100"
+    alb_domain_name    = null  # Will use the ALB created by this module
+  }
+  
+  # Data Bucket Configuration
+  enable_data_bucket = true
   
   # Additional tags
   additional_tags = {
