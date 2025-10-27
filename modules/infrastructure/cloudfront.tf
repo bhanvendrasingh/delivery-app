@@ -49,17 +49,11 @@ resource "aws_cloudfront_distribution" "website" {
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "S3-${aws_s3_bucket.website[0].bucket}"
 
-    forwarded_values {
-      query_string = false
-      cookies {
-        forward = "none"
-      }
-    }
+    # Use managed cache policies for better performance and AWS best practices
+    cache_policy_id            = "658327ea-f89d-4fab-a63d-7e88639e58f6"  # CachingOptimized
+    origin_request_policy_id   = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf"  # CORS-S3Origin
 
     viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 3600
-    max_ttl                = 86400
     compress               = true
   }
 
@@ -70,28 +64,11 @@ resource "aws_cloudfront_distribution" "website" {
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "ALB-${var.project}-${var.environment}"
 
-    forwarded_values {
-      query_string = true
-      headers      = [
-        "Authorization", 
-        "Content-Type", 
-        "Accept", 
-        "Origin", 
-        "Referer", 
-        "User-Agent",
-        "X-Forwarded-For",
-        "X-Forwarded-Proto",
-        "X-Forwarded-Host",
-      ]
-      cookies {
-        forward = "all"
-      }
-    }
+    # Use managed cache policies for better performance and AWS best practices
+    cache_policy_id            = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"  # CachingDisabled
+    origin_request_policy_id   = "216adef6-5c7f-47e4-b989-5492eafa07d3"  # AllViewer
 
     viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 0
-    max_ttl                = 0
     compress               = true
   }
 
@@ -122,7 +99,7 @@ resource "aws_cloudfront_distribution" "website" {
   viewer_certificate {
     acm_certificate_arn            = var.website_config.ssl_certificate_arn
     ssl_support_method             = var.website_config.ssl_certificate_arn != null ? "sni-only" : null
-    minimum_protocol_version       = var.website_config.ssl_certificate_arn != null ? "TLSv1.2_2021" : null
+    minimum_protocol_version       = var.website_config.ssl_certificate_arn != null ? "TLSv1" : null
     cloudfront_default_certificate = var.website_config.ssl_certificate_arn == null ? true : null
   }
 

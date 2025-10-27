@@ -26,7 +26,7 @@ module "go_bharat_infrastructure" {
   spot_instances = {
     min = 2
     max = 5
-    desired = 3
+    desired = 2
   }
 
   ## key for autoscalling
@@ -172,8 +172,8 @@ module "go_bharat_infrastructure" {
   enable_website = true
   website_config = {
     default_root_object  = "index.html"
-    custom_domain       = null  # Set to your QA domain (e.g., "qa.gobharatfresh.com")
-    ssl_certificate_arn = null  # Add your SSL certificate ARN if you have a custom domain
+    custom_domain        = "qa.gobharatfresh.com" # Set to your QA domain (e.g., "qa.gobharatfresh.com")
+    ssl_certificate_arn = "arn:aws:acm:us-east-1:692859922629:certificate/944456e6-4fc9-423f-94b1-30435ba562b5"  # Add your SSL certificate ARN if you have a custom domain
     price_class        = "PriceClass_100"
     alb_domain_name    = null  # Will use the ALB created by this module
   }
@@ -188,4 +188,3 @@ module "go_bharat_infrastructure" {
     Backup      = "Required"
   }
 }
-

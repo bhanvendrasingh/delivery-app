@@ -1,53 +1,72 @@
 # Go-Bharat Infrastructure as Code
 
-This repository contains the Terraform infrastructure code for the Go-Bharat application, supporting both QA and Production environments on AWS.
+This repository contains the Terraform infrastructure code for the Go-Bharat food delivery application, supporting both QA and Production environments on AWS.
 
 ## 🏗️ Architecture Overview
 
 The infrastructure is built using a modular approach with separate environments:
 
 - **QA Environment**: Cost-optimized setup for testing and development
-- **Production Environment**: High-availability, secure setup for production workloads
+- **Production Environment**: High-availability, secure setup with WAF protection
 
 ### Key Components
 
-- **ECS Cluster**: Container orchestration with EC2 launch type
-- **Application Load Balancer**: Traffic distribution and SSL termination
-- **RDS MariaDB**: Managed database service
-- **VPC**: Isolated network with public/private subnets
-- **Auto Scaling**: Automatic scaling based on demand
-- **ECR**: Container image repositories
-- **CloudWatch**: Monitoring and logging
+#### Core Infrastructure
+- **ECS Cluster**: Container orchestration with EC2 launch type and auto-scaling
+- **Application Load Balancer**: Traffic distribution with SSL termination
+- **VPC**: Multi-AZ isolated network with public/private subnets
+- **CloudWatch**: Comprehensive monitoring, logging, and Container Insights
+
+#### Data Layer
+- **DocumentDB (MongoDB)**: Managed NoSQL database with multi-AZ support
+- **ElastiCache (Redis/Valkey)**: In-memory caching and session storage
+- **Elasticsearch**: Search and analytics engine with logging
+- **Kafka on EC2**: Message streaming platform
+
+#### Storage & CDN
+- **S3 Buckets**: Website hosting and file uploads with versioning
+- **CloudFront**: Global CDN with hybrid static/dynamic content delivery
+- **WAF**: Web Application Firewall (Production only) with rate limiting
+
+#### Microservices (9 Services)
+- **API Gateway Service**: Main entry point and routing
+- **Customer Service**: User management and profiles
+- **Restaurant Service**: Restaurant data and menu management
+- **Order Service**: Order processing and tracking
+- **Payment Service**: Payment processing and transactions
+- **Delivery Partner Service**: Driver management and tracking
+- **Communication Service**: Notifications and messaging
+- **Support Agent Service**: Customer support functionality
+- **Data Sync Service**: Data synchronization between services
 
 ## 📁 Repository Structure
 
 ```
 ├── environments/
 │   ├── qa/                    # QA environment configuration
-│   │   ├── main.tf
-│   │   ├── providers.tf
-│   │   └── terraform.tfvars
+│   │   └── main.tf           # QA-specific resource definitions
 │   └── prod/                  # Production environment configuration
-│       ├── main.tf
-│       ├── providers.tf
-│       └── terraform.tfvars
+│       └── main.tf           # Production-specific resource definitions
 ├── modules/
-│   ├── backend/               # Terraform state backend
 │   └── infrastructure/        # Main infrastructure module
-│       ├── main.tf
-│       ├── variables.tf
-│       ├── outputs.tf
-│       ├── locals.tf
-│       ├── iam.tf
-│       ├── security_groups.tf
-│       ├── autoscaling.tf
-│       ├── ecs.tf
-│       ├── database.tf
-│       ├── load_balancer.tf
-│       └── templates/
-├── legacy/                    # Legacy code (reference only)
-│   └── README.md
-└── .gitlab-ci.yml            # CI/CD pipeline
+│       ├── main.tf           # Provider config and VPC setup
+│       ├── variables.tf      # Input variables and validation
+│       ├── outputs.tf        # Output values for other modules
+│       ├── locals.tf         # Local values and naming conventions
+│       ├── iam.tf           # IAM roles and policies
+│       ├── security_groups.tf # Security group definitions
+│       ├── autoscaling.tf    # Auto Scaling Group configuration
+│       ├── ecs.tf           # ECS cluster and service definitions
+│       ├── database.tf       # DocumentDB (MongoDB) cluster
+│       ├── redis.tf         # ElastiCache Redis configuration
+│       ├── elasticsearch.tf  # Elasticsearch domain setup
+│       ├── ec2.tf           # Kafka EC2 instances
+│       ├── s3.tf            # S3 buckets for website and data
+│       ├── cloudfront.tf    # CloudFront distribution
+│       ├── waf.tf           # WAF rules (Production only)
+│       ├── load_balancer.tf # Application Load Balancer
+│       └── templates/       # ECS task definition templates
+└── README.md                # This documentation
 ```
 
 ## 🚀 Getting Started
@@ -92,63 +111,102 @@ terraform apply
 
 ## 🔧 Configuration
 
-### Environment Variables
-
-Each environment has its own `terraform.tfvars` file with environment-specific configurations:
+### Environment Configurations
 
 #### QA Environment
-- Smaller instance types (t3.small)
-- Single AZ deployment
-- Minimal backup retention
-- HTTP only (no SSL)
+- **Compute**: t3.medium/large instances with spot instances for cost optimization
+- **Database**: Single-instance DocumentDB with 7-day backup retention
+- **Cache**: Single Redis node (cache.t3.micro)
+- **Search**: Single Elasticsearch node (t3.small)
+- **Kafka**: Single t3.small instance
+- **Storage**: 7-day log retention, basic lifecycle policies
+- **Security**: HTTPS enabled, basic security groups
 
 #### Production Environment
-- Larger instance types (t3.medium+)
-- Multi-AZ deployment
-- Extended backup retention
-- HTTPS with SSL certificate
-- Enhanced monitoring
+- **Compute**: m5/c5 large+ instances, NO spot instances for reliability
+- **Database**: Multi-AZ DocumentDB cluster (3 instances, r6g.large)
+- **Cache**: Multi-AZ Redis cluster (3 nodes, cache.r6g.large)
+- **Search**: Multi-AZ Elasticsearch cluster (3 nodes, r6g.large) with dedicated masters
+- **Kafka**: Multi-AZ cluster (3 m5.large instances)
+- **Storage**: 30-day log retention, comprehensive lifecycle policies
+- **Security**: WAF protection, rate limiting, geo-blocking capabilities
+- **CDN**: Global CloudFront distribution with custom domain support
 
-### Key Variables
+### Key Configuration Differences
 
-| Variable | Description | QA Default | Prod Default |
-|----------|-------------|------------|--------------|
-| `instance_types` | EC2 instance types | `["t3.small"]` | `["t3.medium", "t3a.medium"]` |
-| `spot_instances.min` | Minimum instances | `1` | `2` |
-| `spot_instances.max` | Maximum instances | `2` | `6` |
-| `database.instance_class` | RDS instance class | `db.t3.micro` | `db.t3.small` |
-| `database.multi_az` | Multi-AZ deployment | `false` | `true` |
-| `enable_https` | Enable HTTPS | `false` | `true` |
+| Component | QA Configuration | Production Configuration |
+|-----------|------------------|-------------------------|
+| **ECS Services** | 1-2 replicas per service | 3-5 replicas (critical services) |
+| **DocumentDB** | 1 instance, db.t3.medium | 3 instances, db.r6g.large |
+| **Redis** | 1 node, cache.t3.micro | 3 nodes, cache.r6g.large |
+| **Elasticsearch** | 1 node, t3.small | 3 nodes + 3 masters, r6g.large |
+| **Kafka** | 1 instance, t3.small | 3 instances, m5.large |
+| **WAF** | Disabled | Enabled with comprehensive rules |
+| **Backup Retention** | 7 days | 30 days |
+| **Deletion Protection** | Disabled | Enabled |
 
 ## 🔐 Security
 
-### IAM Roles
-- **ECS Task Execution Role**: Pulls images and accesses secrets
-- **ECS Task Role**: Application runtime permissions
-- **ECS Instance Role**: EC2 instances in ECS cluster
+### IAM Roles & Policies
+- **ECS Task Execution Role**: Container image pulling and CloudWatch logging
+- **ECS Task Role**: Application runtime permissions for AWS services
+- **ECS Instance Role**: EC2 instances in ECS cluster with SSM access
+- **Elasticsearch Service Role**: Domain management and logging
 
-### Security Groups
-- **ALB Security Group**: HTTP/HTTPS access from internet
-- **ECS Security Group**: Application ports from ALB only
-- **RDS Security Group**: Database access from ECS only
+### Security Groups (Network Isolation)
+- **ALB Security Group**: HTTP/HTTPS access from internet (80, 443)
+- **ECS Security Group**: Application ports from ALB only (8081-9797)
+- **DocumentDB Security Group**: MongoDB access from ECS only (27017)
+- **Redis Security Group**: Cache access from ECS only (6379)
+- **Elasticsearch Security Group**: Search access from ECS only (443, 9200)
+- **Kafka Security Group**: Message streaming from ECS only (9092, 2181)
+
+### Data Protection
+- **Encryption at Rest**: All databases, S3 buckets, and EBS volumes
+- **Encryption in Transit**: TLS 1.2+ for all communications
+- **Network Isolation**: Private subnets for all data services
+- **Access Control**: VPC endpoints and security group restrictions
 
 ### Secrets Management
-- Database credentials stored in AWS Systems Manager Parameter Store
-- Sensitive values marked as `SecureString`
-- Application secrets injected as environment variables
+- **AWS Systems Manager Parameter Store**: Database credentials and connection strings
+- **Secure String Parameters**: Encrypted sensitive values
+- **Environment Variables**: Secure injection into ECS tasks
+- **Lifecycle Management**: Automatic password rotation support
 
-## 📊 Monitoring
+### Production Security Features
+- **WAF Protection**: SQL injection, XSS, and known bad inputs protection
+- **Rate Limiting**: 2000 requests per 5-minute window per IP
+- **Geo-blocking**: Configurable country-based restrictions
+- **IP Whitelisting**: Allow-list for trusted IP addresses
+- **CloudWatch Logging**: Comprehensive security event logging
+
+## 📊 Monitoring & Observability
 
 ### CloudWatch Integration
-- **Container Insights**: ECS cluster and service metrics
-- **Log Groups**: Application and system logs
-- **Custom Metrics**: Application-specific monitoring
+- **Container Insights**: ECS cluster, service, and task-level metrics
+- **Application Logs**: Centralized logging for all 9 microservices
+- **Infrastructure Logs**: VPC Flow Logs, ALB access logs, WAF logs
+- **Database Logs**: DocumentDB audit and profiler logs (Production)
+- **Search Logs**: Elasticsearch slow query and application logs
 
-### Alarms (Production)
-- High CPU utilization
-- Memory usage
-- Database connections
-- Application response time
+### Log Retention Policies
+- **QA Environment**: 7 days retention for cost optimization
+- **Production Environment**: 30 days retention for compliance
+- **WAF Logs**: Detailed request/response logging with PII redaction
+
+### Metrics & Dashboards
+- **ECS Metrics**: CPU, memory, network utilization per service
+- **Database Metrics**: Connection count, query performance, storage usage
+- **Cache Metrics**: Hit/miss ratios, eviction rates, connection count
+- **Search Metrics**: Query latency, indexing rate, cluster health
+- **Load Balancer Metrics**: Request count, latency, error rates
+- **Custom Application Metrics**: Business KPIs and performance indicators
+
+### Auto Scaling Triggers
+- **CPU-based Scaling**: Scale up at 90%, scale down at 40%
+- **Memory-based Scaling**: Automatic scaling based on memory utilization
+- **Custom Metrics**: Application-specific scaling triggers
+- **Cooldown Periods**: 5-minute cooldown to prevent flapping
 
 ## 🚀 CI/CD Pipeline
 
@@ -201,26 +259,54 @@ The GitLab CI pipeline includes:
 
 ### Common Issues
 
-1. **State Lock**: If Terraform state is locked, check DynamoDB table
-2. **AMI Not Found**: Update AMI filters in `autoscaling.tf`
-3. **Capacity Issues**: Check EC2 limits in your AWS account
-4. **Database Connection**: Verify security group rules
+1. **State Lock**: Check DynamoDB table for stuck locks
+2. **Service Deployment Failures**: Check ECS service events and task definitions
+3. **Database Connection Issues**: Verify security group rules and parameter store values
+4. **Load Balancer Health Checks**: Ensure services respond on health check endpoints
+5. **Elasticsearch Access**: Verify VPC configuration and security groups
+6. **Kafka Connectivity**: Check EC2 instance status and security group rules
 
 ### Useful Commands
 
 ```bash
-# Check ECS cluster status
+# ECS Cluster Management
 aws ecs describe-clusters --clusters go-bharat-qa-cluster
+aws ecs list-services --cluster go-bharat-qa-cluster
+aws ecs describe-services --cluster go-bharat-qa-cluster --services <service-name>
 
-# View running tasks
-aws ecs list-tasks --cluster go-bharat-qa-cluster
+# Task and Container Debugging
+aws ecs list-tasks --cluster go-bharat-qa-cluster --service-name <service-name>
+aws ecs describe-tasks --cluster go-bharat-qa-cluster --tasks <task-arn>
 
-# Check ALB health
+# Load Balancer Health Checks
+aws elbv2 describe-target-groups --load-balancer-arn <alb-arn>
 aws elbv2 describe-target-health --target-group-arn <target-group-arn>
 
-# View logs
-aws logs tail /ecs/go-bharat-qa/webapp --follow
+# Database Connectivity
+aws docdb describe-db-clusters --db-cluster-identifier go-bharat-qa-mongodb-cluster
+aws docdb describe-db-instances --db-instance-identifier go-bharat-qa-mongodb-0
+
+# Log Analysis
+aws logs describe-log-groups --log-group-name-prefix "/ecs/go-bharat"
+aws logs tail /ecs/go-bharat-qa/api-gateway-service --follow
+aws logs tail /aws/elasticsearch/domains/go-bharat-qa-elasticsearch --follow
+
+# Parameter Store Values
+aws ssm get-parameters --names "/go-bharat/qa/mongodb/endpoint" "/go-bharat/qa/redis/endpoint"
+aws ssm get-parameter --name "/go-bharat/qa/mongodb/connection_string" --with-decryption
+
+# S3 and CloudFront
+aws s3 ls s3://go-bharat-qa-website/
+aws cloudfront list-distributions --query 'DistributionList.Items[?Comment==`go-bharat qa website distribution`]'
 ```
+
+### Performance Optimization
+
+1. **Database Performance**: Monitor DocumentDB slow queries and optimize indexes
+2. **Cache Hit Ratios**: Ensure Redis cache is properly utilized
+3. **Search Performance**: Monitor Elasticsearch query latency and optimize mappings
+4. **CDN Optimization**: Review CloudFront cache behaviors and TTL settings
+5. **Auto Scaling**: Fine-tune scaling policies based on actual usage patterns
 
 ## 🤝 Contributing
 
